@@ -156,8 +156,70 @@ class AceCombatPlugin : public uevr::Plugin
 		}
 	}
 
-	void on_xinput_get_state(uint32_t *retval, uint32_t user_index, XINPUT_STATE *state) override
+	/*
+		Mappings:
+
+		LS:
+			* up/down - pitch - LS Y axis
+			* left/right - yaw - LB/RB
+		RS:
+			* up/down - throttle - LT for up, RT for down
+			* left/right - roll - LS X axis
+
+		buttons - no change (yet?)
+	*/
+	void on_xinput_get_state(uint32_t *retval, uint32_t user_index,
+							 XINPUT_STATE *target_state) override
 	{
+		if(API::get()->param()->vr->get_lowest_xinput_index() != user_index) {
+			return;
+		}
+
+		XINPUT_STATE starting_state{*target_state};
+
+		target_state->Gamepad.bLeftTrigger = 0;
+		target_state->Gamepad.bRightTrigger = 0;
+
+		target_state->Gamepad.sThumbLX = 0;
+		target_state->Gamepad.sThumbLY = 0;
+
+		target_state->Gamepad.sThumbRX = 0;
+		target_state->Gamepad.sThumbRY = 0;
+
+		// pitch - do nothing
+		target_state->Gamepad.sThumbLY = starting_state.Gamepad.sThumbLY;
+
+		// yaw, negative values == left
+		if(starting_state.Gamepad.sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+			target_state->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
+		} else if(starting_state.Gamepad.sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+			target_state->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
+		}
+
+		// roll
+		target_state->Gamepad.sThumbLX = starting_state.Gamepad.sThumbRX;
+
+		// throttle
+		if(starting_state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD ||
+		   starting_state.Gamepad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD) {
+
+			// allow to passthrough triggers
+			target_state->Gamepad.bLeftTrigger = starting_state.Gamepad.bLeftTrigger;
+			target_state->Gamepad.bRightTrigger = starting_state.Gamepad.bRightTrigger;
+		} else {
+			// user is not holding triggers
+
+			// negative values == down
+			if(starting_state.Gamepad.sThumbRY < -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
+				target_state->Gamepad.bLeftTrigger = std::abs(linear_scale(
+					starting_state.Gamepad.sThumbRY, -SHRT_MAX, -254,
+					-XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE, -XINPUT_GAMEPAD_TRIGGER_THRESHOLD));
+			} else if(starting_state.Gamepad.sThumbRY > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
+				target_state->Gamepad.bRightTrigger = std::abs(linear_scale(
+					starting_state.Gamepad.sThumbRY, SHRT_MAX, 255,
+					XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE, XINPUT_GAMEPAD_TRIGGER_THRESHOLD));
+			}
+		}
 	}
 
   private:
@@ -204,19 +266,20 @@ class AceCombatPlugin : public uevr::Plugin
 
 	void internal_frame()
 	{
-		const auto vr = API::get()->param()->vr;
-
 		if(ImGui::Begin("Ace Combat Plugin")) {
-		}
-		ImGui::End();
-
-		if(ImGui::Begin("Ace Combat Debug Panel")) {
 		}
 		ImGui::End();
 	}
 
 	void plugin_on_pre_engine_tick(API::UGameEngine *engine, float delta)
 	{
+	}
+
+	inline int32_t linear_scale(const int32_t val, const int32_t val_max, const int32_t target_max,
+								const int32_t val_min = 0, const int32_t target_min = 0)
+	{
+		double ratio = (double)(target_max - target_min) / (double)(val_max - val_min);
+		return std::floor((double)(val - val_min) * ratio + target_min);
 	}
 
   private:
