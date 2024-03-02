@@ -1,0 +1,43 @@
+# Reference: https://build-cpp.github.io/cmkr/cmake-toml
+[project]
+name = "ace-combat-uevr"
+cmake-before="""
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/MP>)
+"""
+
+cmake-after = """
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
+set(ASMJIT_STATIC ON CACHE BOOL "" FORCE)
+
+if ("${CMAKE_BUILD_TYPE}" MATCHES "Release")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+
+    # Statically compile runtime
+    string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+    string(REGEX REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+    string(REGEX REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+
+    message(NOTICE "Building in Release mode")
+endif()
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+"""
+
+[fetch-content.uevr]
+git = "https://github.com/praydog/UEVR"
+tag = "c25695a8c0ec35b556229046cc7011e27f4d42ee"
+
+[target.ace_combat_plugin]
+type = "shared"
+sources = ["src/**.c", "src/**.cpp"]
+headers = ["src/**.h", "src/**.hpp"]
+include-directories = ["include"]
+compile-features = ["cxx_std_23"]
+link-libraries = [
+	"glm",
+	"plugin_renderlib",
+]
