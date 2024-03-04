@@ -1,3 +1,0 @@
-Engine_r.AllowOcclusionQueries=0
-Engine_r.DepthOfFieldQuality=0
-Engine_r.OneFrameThreadLag=1

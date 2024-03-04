@@ -29,7 +29,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 [fetch-content.uevr]
 git = "https://github.com/praydog/UEVR"
-tag = "c25695a8c0ec35b556229046cc7011e27f4d42ee"
+tag = "067279517877c0b3dd8a1bb46a7124c1e1aac113"
 
 [target.ace_combat_plugin]
 type = "shared"
