@@ -17,6 +17,11 @@
 
 #include "uevr/Plugin.hpp"
 
+#include "acesdk/AcePlayerPawn.hpp"
+#include "acesdk/Mission.hpp"
+#include "acesdk/NimbusPlayerCameraManager.hpp"
+#include "acesdk/NimbusPlayerController.hpp"
+
 using namespace uevr;
 
 class AceCombatPlugin : public uevr::Plugin
@@ -156,22 +161,21 @@ class AceCombatPlugin : public uevr::Plugin
 		}
 	}
 
-	/*
-		Mappings:
-
-		LS:
-			* up/down - pitch - LS Y axis
-			* left/right - yaw - LB/RB
-		RS:
-			* up/down - throttle - LT for up, RT for down
-			* left/right - roll - LS X axis
-
-		buttons - no change (yet?)
-	*/
 	void on_xinput_get_state(uint32_t *retval, uint32_t user_index,
 							 XINPUT_STATE *target_state) override
 	{
-		if(API::get()->param()->vr->get_lowest_xinput_index() != user_index) {
+		if((API::get()->param()->vr->get_lowest_xinput_index() != user_index)) {
+			return;
+		}
+
+		// add 'unstuck camera' function
+		if(target_state->Gamepad.wButtons & XINPUT_GAMEPAD_BACK) {
+			stop_camera_setup();
+			start_camera_setup(false);
+		}
+
+		// allow control remap to be bypassed
+		if(m_alternate_control_scheme == false) {
 			return;
 		}
 
@@ -223,6 +227,42 @@ class AceCombatPlugin : public uevr::Plugin
 	}
 
   private:
+	enum CameraSetupState
+	{
+		None = 0,
+		WaitingForPlaneMovement,
+		WaitingToStopShake,
+		WaitingToStartShake
+	};
+
+	static void *ini_handler_read_open(ImGuiContext *, ImGuiSettingsHandler *, const char *name)
+	{
+		ImGuiID id = ImHashStr(name);
+		ImGuiWindowSettings *settings = new ImGuiWindowSettings();
+		settings->ID = id;
+		settings->WantApply = true;
+		return (void *)settings;
+	}
+
+	static void ini_handler_read_line(ImGuiContext *ctx, ImGuiSettingsHandler *handler, void *entry,
+									  const char *line)
+	{
+		int alternate_control_scheme = 0;
+
+		if(sscanf(line, "AlternateControlScheme=%d", &alternate_control_scheme) == 1) {
+			m_alternate_control_scheme = (alternate_control_scheme == 1);
+		}
+	}
+
+	static void ini_handler_write_all(ImGuiContext *ctx, ImGuiSettingsHandler *handler,
+									  ImGuiTextBuffer *buf)
+	{
+		buf->reserve(buf->size() + 200); // ballpark reserve
+		buf->append("[UserData][Ace Combat Plugin]\n");
+		buf->appendf("AlternateControlScheme=%d\n", m_alternate_control_scheme);
+		buf->append("\n");
+	}
+
 	bool initialize_imgui()
 	{
 		if(m_initialized) {
@@ -237,6 +277,18 @@ class AceCombatPlugin : public uevr::Plugin
 		static const auto imgui_ini =
 			API::get()->get_persistent_dir(L"ace_combat_plugin.ini").string();
 		ImGui::GetIO().IniFilename = imgui_ini.c_str();
+
+		ImGuiSettingsHandler ini_handler;
+		ini_handler.TypeName = "UserData";
+		ini_handler.TypeHash = ImHashStr("UserData");
+		ini_handler.ReadOpenFn = &ini_handler_read_open;
+		ini_handler.ReadLineFn = &ini_handler_read_line;
+		ini_handler.WriteAllFn = &ini_handler_write_all;
+
+		ImGuiContext &g = *GImGui;
+		IM_ASSERT(g.Initialized);
+
+		g.SettingsHandlers.push_back(ini_handler);
 
 		const auto renderer_data = API::get()->param()->renderer;
 
@@ -267,12 +319,256 @@ class AceCombatPlugin : public uevr::Plugin
 	void internal_frame()
 	{
 		if(ImGui::Begin("Ace Combat Plugin")) {
+			ImGui::Checkbox("Use alternate control scheme", &m_alternate_control_scheme);
+		}
+		ImGui::End();
+
+		if(ImGui::Begin("Ace Combat Debug Data")) {
+			ImGui::Text("m_last_root_rotation: Pitch: %f, Yaw: %f, Roll: %f",
+						m_last_root_rotation.pitch, m_last_root_rotation.yaw,
+						m_last_root_rotation.roll);
+			ImGui::Text("m_last_root_location: X: %f, Y: %f, Z: %f", m_last_root_location.x,
+						m_last_root_location.y, m_last_root_location.z);
 		}
 		ImGui::End();
 	}
 
+	void process_level_load(NimbusPlayerController *const player_controller,
+							AcePlayerPawn *const player_pawn)
+	{
+		if(player_pawn != m_last_player_pawn) {
+			API::get()->log_info("player_pawn change: old %p, current %p", m_last_player_pawn,
+								 player_pawn);
+
+			// update class name in cache
+			const auto pawn_class = AcePlayerPawn::static_class(true);
+			if(pawn_class) {
+				API::get()->log_info("New pawn class: %ls", pawn_class->get_full_name().c_str());
+
+				m_last_player_pawn = player_pawn;
+				m_last_root_location = {0};
+				m_last_root_rotation = {0};
+
+				m_last_is_in_igc = false;
+				m_last_camera_type = CameraType::NO_CAMERA;
+
+				stop_camera_setup();
+
+			} else {
+				API::get()->log_info("pawn class NULL");
+
+				m_last_player_pawn = nullptr;
+			}
+
+			const auto camera_manager_class = NimbusPlayerCameraManager::static_class(true);
+			if(camera_manager_class) {
+				API::get()->log_info("New camera_manager_class: %ls",
+									 camera_manager_class->get_full_name().c_str());
+			} else {
+				API::get()->log_info("camera_manager_class NULL");
+			}
+
+			const auto mission_class = NimbusPlayerCameraManager::get_instance(true);
+			if(mission_class) {
+				API::get()->log_info("New mission_class: %ls",
+									 mission_class->get_full_name().c_str());
+			} else {
+				API::get()->log_info("mission_class NULL");
+			}
+		}
+	}
+
+	void stop_camera_setup()
+	{
+		m_last_camera_setup_state = CameraSetupState::None;
+		m_last_camera_setup_step = {};
+		m_camera_setup_start_location = {0};
+	}
+
+	void start_camera_setup(bool wait_for_plane_movement)
+	{
+		if(wait_for_plane_movement) {
+			m_last_camera_setup_state = CameraSetupState::WaitingForPlaneMovement;
+		} else {
+			m_last_camera_setup_state = CameraSetupState::WaitingToStopShake;
+		}
+
+		m_last_camera_setup_step = std::chrono::high_resolution_clock::now();
+		m_camera_setup_start_location = m_last_root_location;
+	}
+
+	void do_camera_setup_step(NimbusPlayerCameraManager *const camera_manager)
+	{
+		const auto now = std::chrono::high_resolution_clock::now();
+		const auto last_step_duration = now - m_last_camera_setup_step;
+
+		UEVR_Vector3f movement_delta = {
+			.x = abs(m_last_root_location.x - m_camera_setup_start_location.x),
+			.y = abs(m_last_root_location.y - m_camera_setup_start_location.y),
+			.z = abs(m_last_root_location.z - m_camera_setup_start_location.z),
+		};
+
+		const bool has_plane_moved = (movement_delta.x > m_plane_moved_threshold) ||
+									 (movement_delta.y > m_plane_moved_threshold) ||
+									 (movement_delta.z > m_plane_moved_threshold);
+
+		switch(m_last_camera_setup_state) {
+		case CameraSetupState::None:
+			break;
+
+		case CameraSetupState::WaitingForPlaneMovement:
+			if(has_plane_moved || (last_step_duration > m_wait_for_plane_movement_timeout)) {
+				if(has_plane_moved) {
+					API::get()->log_info(
+						"CameraSetupState::WaitingForPlaneMovement: Airspeed Live!");
+				} else {
+					API::get()->log_warn("CameraSetupState::WaitingForPlaneMovement: TIMEOUT");
+				}
+
+				m_last_camera_setup_step = now;
+				m_last_camera_setup_state = CameraSetupState::WaitingToStopShake;
+			}
+			break;
+
+		case CameraSetupState::WaitingToStopShake:
+			if(last_step_duration > m_delay_before_stop_shake) {
+				API::get()->log_info("CameraSetupState::WaitingToStopShake done");
+				camera_manager->stop_all_camera_shakes(true);
+				m_last_camera_setup_step = now;
+				m_last_camera_setup_state = CameraSetupState::WaitingToStartShake;
+			}
+			break;
+
+		case CameraSetupState::WaitingToStartShake:
+			if(last_step_duration > m_delay_before_start_shake) {
+				API::get()->log_info("CameraSetupState::WaitingToStartShake done");
+				camera_manager->test_loop_camera_shake_play();
+				camera_manager->test_loop_camera_shake_add_scale(-5000.0);
+				m_last_camera_setup_step = {};
+				m_last_camera_setup_state = CameraSetupState::None;
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	void process_camera_switch(NimbusPlayerController *const player_controller,
+							   AcePlayerPawn *const player_pawn)
+	{
+		const auto camera_manager = NimbusPlayerCameraManager::get_instance();
+		if(!camera_manager) {
+			return;
+		}
+
+		const auto mission_inst = Mission::get_instance();
+		if(!mission_inst) {
+			return;
+		}
+
+		const auto camera_view = player_pawn->prop_camera_view();
+		if(!camera_view) {
+			return;
+		}
+
+		const auto is_in_igc = mission_inst->is_in_igc();
+
+		if(m_last_is_in_igc != is_in_igc) {
+			m_last_is_in_igc = is_in_igc;
+			if(is_in_igc) {
+				// IGC enter
+				API::get()->log_info("IGC enter");
+				camera_manager->stop_all_camera_shakes(true);
+				stop_camera_setup();
+			} else {
+				// IGC exit
+				API::get()->log_info("IGC exit");
+			}
+		}
+
+		const auto camera_type = camera_view->get_current_camera_type();
+
+		if(m_last_camera_type != camera_type) {
+			API::get()->log_info("New camera: %d", camera_type);
+
+			m_last_camera_type = camera_type;
+
+			if(camera_type == CameraType::COCKPIT) {
+				// cockpit enter
+				API::get()->log_info("cockpit enter");
+				start_camera_setup(true);
+			} else {
+				// cockpit exit
+				API::get()->log_info("cockpit exit");
+				camera_manager->stop_all_camera_shakes(true);
+				stop_camera_setup();
+			}
+		}
+
+		do_camera_setup_step(camera_manager);
+	}
+
+	void process_root_component_data(NimbusPlayerController *const player_controller,
+									 AcePlayerPawn *const player_pawn)
+	{
+		const auto pawn_root_component = player_pawn->get_root_component();
+		if(!pawn_root_component) {
+			API::get()->log_info("pawn_root_component NULL");
+			return;
+		}
+
+		const auto root_rotation = pawn_root_component->prop_relative_rotation();
+		if(!root_rotation) {
+			API::get()->log_info("root_rotation NULL");
+			return;
+		}
+		m_last_root_rotation = *root_rotation;
+
+		const auto root_location = pawn_root_component->prop_relative_location();
+		if(!root_location) {
+			API::get()->log_info("root_location NULL");
+			return;
+		}
+		m_last_root_location = *root_location;
+	}
+
+	void process_ui_enter_exit()
+	{
+		const bool is_drawing_ui = API::get()->param()->functions->is_drawing_ui();
+
+		if(is_drawing_ui == last_is_is_drawing_ui) {
+			return;
+		}
+
+		if(is_drawing_ui) {
+			// menu enter event
+		} else {
+			// menu exit event
+			ImGui::MarkIniSettingsDirty();
+		}
+
+		last_is_is_drawing_ui = is_drawing_ui;
+	}
+
 	void plugin_on_pre_engine_tick(API::UGameEngine *engine, float delta)
 	{
+		// trigger regardless if player_pawn (the plane) exists
+		process_ui_enter_exit();
+
+		const auto player_controller = NimbusPlayerController::get_instance();
+		if(!player_controller) {
+			return;
+		}
+
+		const auto player_pawn = player_controller->get_acknowledged_pawn();
+		if(!player_pawn) {
+			return;
+		}
+
+		process_level_load(player_controller, player_pawn);
+		process_root_component_data(player_controller, player_pawn);
+		process_camera_switch(player_controller, player_pawn);
 	}
 
 	inline int32_t linear_scale(const int32_t val, const int32_t val_max, const int32_t target_max,
@@ -288,6 +584,26 @@ class AceCombatPlugin : public uevr::Plugin
 	bool m_was_rendering_desktop{false};
 
 	std::recursive_mutex m_imgui_mutex{};
+
+	AcePlayerPawn *m_last_player_pawn = nullptr;
+
+	CameraType m_last_camera_type = CameraType::NO_CAMERA;
+	bool m_last_is_in_igc = false;
+
+	CameraSetupState m_last_camera_setup_state = CameraSetupState::None;
+	std::chrono::steady_clock::time_point m_last_camera_setup_step{};
+	UEVR_Vector3f m_camera_setup_start_location{0};
+
+	const std::chrono::milliseconds m_delay_before_stop_shake = std::chrono::milliseconds(50);
+	const std::chrono::milliseconds m_delay_before_start_shake = std::chrono::milliseconds(50);
+	const std::chrono::seconds m_wait_for_plane_movement_timeout = std::chrono::seconds(5);
+	const float m_plane_moved_threshold = 0.5f;
+
+	UEVR_Vector3f m_last_root_location{0};
+	UEVR_Rotatorf m_last_root_rotation{0};
+
+	static inline bool m_alternate_control_scheme = false;
+	bool last_is_is_drawing_ui = false;
 };
 
 // Actually creates the plugin. Very important that this global is created.
