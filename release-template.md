@@ -1,0 +1,54 @@
+# Ace Combat 7 UEVR compatibility mod
+
+## Mod Features
+1. fixes cockpit camera so it works out of the box in most situations
+1. adds 'unstuck cockpit instruments' button (left start/select button on Xbox controller) for those rare occurrences where automation fails.
+1. adds optional controls remap selectable in plugin overlay in UEVR menu. After remap controls are in line with typical flight sim - LS is elevator and rudder, RS is aileron and throttle.
+1. works well **only with VR plane skins added by Konan's VR Planes mod** (see below).
+
+## Note
+This is an alternative for [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) (`~~~UEVR_Compatibility_Mod_P.pak`). **Do NOT install both** at the same time. The game will be very broken if you do.
+
+**This is early version of the mod**. Please give me a hand in testing - you see broken camera somewhere with the mod? Leave a note in Ace Combat 7 Flat2VR discord channel (instructions below).
+
+## Getting started
+
+### Joining Flat2VR discord
+
+Flat2VR channel list is tiered. You need to tell the server that you want to see UEVR related stuff (channels with `#ue-` prefix).
+1. accept [Flat2VR Discord](https://discord.gg/67RFQscp) invite
+1. go to `#ue-join` and enable UEVR channels visibility (button below the message)
+1. go to [Ace Combat 7 channel](https://discord.com/channels/747967102895390741/1071072263820021840) in `#ue-games`.
+
+### Installing prerequisite mods
+1. after joining the Flat2VR discord install [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). Follow the instructions in `message.txt` file closely. Konan's `AC7_VR_PatchP.pak` from the same link is required as well. **Do not install** kosnag's uevr compatibility mod (`~~~UEVR_Compatibility_Mod_P.pak`). This profile replaces it.
+1. just to check that you've read the instructions you need:
+	* `Playable_VR_Planes_for_test_only_P.pak` from [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). Rename to `~~~~~~~Playable VR Planes (for test only)_P.pak`
+	* `AC7_VR_Patch_P.pak` from [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). Rename to `~~~~~~~AC7 VR Patch_P.pak`
+	* `Additional_Skin_Slots_P.pak` from [Additional Skin Slots mod](https://www.nexusmods.com/acecombat7skiesunknown/mods/2179)
+	* `~~~~~~~~~!since_SDT_Add-On-ASS_P.pak` from `since_SDT_Add-On_P.pak` download option in [sincerity's essential files](https://www.nexusmods.com/acecombat7skiesunknown/mods/2274)
+1. [this is how your ~mods folder should look like](https://cdn.discordapp.com/attachments/1071072263820021840/1216517542667878440/image.png?ex=6600ad3f&is=65ee383f&hm=e09af0ea62b131f90924a7b526ff11ffd12d2782bac72f808f599de842bbaf77&). If in doubt use [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835) install instructions over the picture.
+
+### UEVR Nightly `067279517877c0b3dd8a1bb46a7124c1e1aac113` or newer is required
+* Vanilla version [here](https://github.com/praydog/UEVR-nightly/releases/tag/nightly-829-067279517877c0b3dd8a1bb46a7124c1e1aac113)
+* if you have anything **but Pico 4** clouds will look broken. You'll need mrbelowski's patch on top of latest UEVR nightly. At the time of writing `UEVR.zip` from [my discord message](https://discord.com/channels/747967102895390741/1071072263820021840/1216517229051383838) is the only source I know.
+
+### Installing the mod
+1. download `Ace7Game.zip` from [here](https://github.com/keton/ace-combat-uevr/releases/latest)
+1. import it as profile into UEVR using dedicated button in UEVR injector or unpack to `%APPDATA%\UnrealVRMod\Ace7Game` (you'll need to create `Ace7Game` or empty it before unpacking)
+
+### Running
+1. put on your HMD
+1. launch AC7 as a flat game
+1. stop at the main menu
+1. inject using UEVR nightly from above (optionally with mrbelowski's patch)
+1. (for first time verification only) press and hold L3+R3 till UEVR overlay pops up. It's set to long press so flares work in game. Look for blue overlay panel labelled `Ace Combat Plugin`. If you see it plugin is loaded. If not something went wrong.
+1. go into a mission, pick a plane
+1. **important** in plane customization screen go into skin selection menu and go to the very bottom. It should have 10 extra skin slots and you want the last one. If you don't see those Additional Skin Slots mod is not installed correctly. Go trough the steps again or ask on Discord.
+1. **you really need to select 10th additional skin slot**. This is what triggers Konan's VR Planes mod. Without it displays in the cockpit and HUD won't work. Not all planes are already converted. Check documentation.
+1. start mission as usual. Multi Function Displays (MFDs) should work. In case they get stuck press 'Unstuck cockpit button' - Xbox controller 'back' button (left small round one opposite to menu button)
+1. Camera breaks in some missions/planes? 'Unstuck cockpit button' fails to work? Please help by reporting on Discord.
+
+## Acknowledgements
+* Credit goes to kosnag, the author of [original UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) for discovering 'shake camera for 3d' fix. This required huge amount of time spent on research and hacking the game. And it made this mod possible. Hats off.
+* Another round of credit and appreciation goes to Konan, the author of [VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). The mod required meticulous hand crafting each plane to accommodate special VR version of the instruments.
