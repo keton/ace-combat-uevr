@@ -348,13 +348,13 @@ class AceCombatPlugin : public uevr::Plugin
 	void internal_frame()
 	{
 		if(ImGui::Begin("Ace Combat Plugin")) {
-			const char *labels[] = {
+			const auto labels = {
 				"Default", "Mode 1", "Mode 2", "Mode 3", "Mode 4",
 			};
 
 			int selection = m_control_scheme;
 
-			if(ImGui::Combo("Control Scheme", &selection, labels, IM_ARRAYSIZE(labels))) {
+			if(ImGui::Combo("Control Scheme", &selection, labels.begin(), labels.size())) {
 				if(selection >= 0 && selection <= ControlScheme::Mode4) {
 					m_control_scheme = (ControlScheme)selection;
 				}
@@ -617,7 +617,7 @@ class AceCombatPlugin : public uevr::Plugin
 		return std::floor((double)(val - val_min) * ratio + target_min);
 	}
 
-	ControlInputs remap_controls(const XINPUT_STATE *const starting_state,
+	inline ControlInputs remap_controls(const XINPUT_STATE *const starting_state,
 								 const ControlScheme control_scheme)
 	{
 		switch(control_scheme) {
