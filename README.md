@@ -5,7 +5,7 @@
 ## Features
 1. fixes cockpit camera so it works out of the box in most situations
 1. adds 'unstuck cockpit instruments' button (left start/select button on Xbox controller) for those rare occurrences where automation fails.
-1. adds optional controls remap selectable in plugin overlay in UEVR menu. After remap controls are in line with typical flight sim - LS is elevator and rudder, RS is aileron and throttle.
+1. Adds optional controls remap selectable in plugin overlay in UEVR menu. For remap any standard RC control mode can be selected (Mode 1-4).
 
 ## Building
 

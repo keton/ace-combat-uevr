@@ -175,11 +175,12 @@ class AceCombatPlugin : public uevr::Plugin
 		}
 
 		// allow control remap to be bypassed
-		if(m_alternate_control_scheme == false) {
+		if(m_control_scheme == ControlScheme::DefaultControls) {
 			return;
 		}
 
 		XINPUT_STATE starting_state{*target_state};
+		const auto controls = remap_controls(&starting_state, m_control_scheme);
 
 		target_state->Gamepad.bLeftTrigger = 0;
 		target_state->Gamepad.bRightTrigger = 0;
@@ -190,18 +191,23 @@ class AceCombatPlugin : public uevr::Plugin
 		target_state->Gamepad.sThumbRX = 0;
 		target_state->Gamepad.sThumbRY = 0;
 
-		// pitch - do nothing
-		target_state->Gamepad.sThumbLY = starting_state.Gamepad.sThumbLY;
+		// pitch
+		if((controls.pitch < -controls.pitch_deadzone) ||
+		   (controls.pitch > controls.pitch_deadzone)) {
+			target_state->Gamepad.sThumbLY = controls.pitch;
+		}
 
 		// yaw, negative values == left
-		if(starting_state.Gamepad.sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+		if(controls.yaw < -controls.yaw_deadzone) {
 			target_state->Gamepad.wButtons |= XINPUT_GAMEPAD_LEFT_SHOULDER;
-		} else if(starting_state.Gamepad.sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+		} else if(controls.yaw > controls.yaw_deadzone) {
 			target_state->Gamepad.wButtons |= XINPUT_GAMEPAD_RIGHT_SHOULDER;
 		}
 
 		// roll
-		target_state->Gamepad.sThumbLX = starting_state.Gamepad.sThumbRX;
+		if((controls.roll < -controls.roll_deadzone) || (controls.roll > controls.roll_deadzone)) {
+			target_state->Gamepad.sThumbLX = controls.roll;
+		}
 
 		// throttle
 		if(starting_state.Gamepad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD ||
@@ -214,14 +220,14 @@ class AceCombatPlugin : public uevr::Plugin
 			// user is not holding triggers
 
 			// negative values == down
-			if(starting_state.Gamepad.sThumbRY < -XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
-				target_state->Gamepad.bLeftTrigger = std::abs(linear_scale(
-					starting_state.Gamepad.sThumbRY, -SHRT_MAX, -254,
-					-XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE, -XINPUT_GAMEPAD_TRIGGER_THRESHOLD));
-			} else if(starting_state.Gamepad.sThumbRY > XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE) {
-				target_state->Gamepad.bRightTrigger = std::abs(linear_scale(
-					starting_state.Gamepad.sThumbRY, SHRT_MAX, 255,
-					XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE, XINPUT_GAMEPAD_TRIGGER_THRESHOLD));
+			if(controls.throttle < -controls.throttle_deadzone) {
+				target_state->Gamepad.bLeftTrigger = std::abs(
+					linear_scale(controls.throttle, -SHRT_MAX, -254, -controls.throttle_deadzone,
+								 -XINPUT_GAMEPAD_TRIGGER_THRESHOLD));
+			} else if(controls.throttle > controls.throttle_deadzone) {
+				target_state->Gamepad.bRightTrigger = std::abs(
+					linear_scale(controls.throttle, SHRT_MAX, 255, controls.throttle_deadzone,
+								 XINPUT_GAMEPAD_TRIGGER_THRESHOLD));
 			}
 		}
 	}
@@ -233,6 +239,28 @@ class AceCombatPlugin : public uevr::Plugin
 		WaitingForPlaneMovement,
 		WaitingToStopShake,
 		WaitingToStartShake
+	};
+
+	// Refer to standard RC control modes for example: https://i.stack.imgur.com/3O98c.png
+	enum ControlScheme
+	{
+		DefaultControls = 0,
+		Mode1,
+		Mode2,
+		Mode3,
+		Mode4,
+	};
+
+	struct ControlInputs
+	{
+		SHORT pitch; // elevator
+		SHORT pitch_deadzone;
+		SHORT yaw; // rudder
+		SHORT yaw_deadzone;
+		SHORT roll; // aileron
+		SHORT roll_deadzone;
+		SHORT throttle;
+		SHORT throttle_deadzone;
 	};
 
 	static void *ini_handler_read_open(ImGuiContext *, ImGuiSettingsHandler *, const char *name)
@@ -249,8 +277,9 @@ class AceCombatPlugin : public uevr::Plugin
 	{
 		int alternate_control_scheme = 0;
 
-		if(sscanf(line, "AlternateControlScheme=%d", &alternate_control_scheme) == 1) {
-			m_alternate_control_scheme = (alternate_control_scheme == 1);
+		if(sscanf(line, "ControlScheme=%d", &alternate_control_scheme) == 1 &&
+		   alternate_control_scheme >= 0 && alternate_control_scheme <= ControlScheme::Mode4) {
+			m_control_scheme = (ControlScheme)alternate_control_scheme;
 		}
 	}
 
@@ -259,7 +288,7 @@ class AceCombatPlugin : public uevr::Plugin
 	{
 		buf->reserve(buf->size() + 200); // ballpark reserve
 		buf->append("[UserData][Ace Combat Plugin]\n");
-		buf->appendf("AlternateControlScheme=%d\n", m_alternate_control_scheme);
+		buf->appendf("ControlScheme=%d\n", m_control_scheme);
 		buf->append("\n");
 	}
 
@@ -319,7 +348,17 @@ class AceCombatPlugin : public uevr::Plugin
 	void internal_frame()
 	{
 		if(ImGui::Begin("Ace Combat Plugin")) {
-			ImGui::Checkbox("Use alternate control scheme", &m_alternate_control_scheme);
+			const char *labels[] = {
+				"Default", "Mode 1", "Mode 2", "Mode 3", "Mode 4",
+			};
+
+			int selection = m_control_scheme;
+
+			if(ImGui::Combo("Control Scheme", &selection, labels, IM_ARRAYSIZE(labels))) {
+				if(selection >= 0 && selection <= ControlScheme::Mode4) {
+					m_control_scheme = (ControlScheme)selection;
+				}
+			}
 		}
 		ImGui::End();
 
@@ -578,6 +617,61 @@ class AceCombatPlugin : public uevr::Plugin
 		return std::floor((double)(val - val_min) * ratio + target_min);
 	}
 
+	ControlInputs remap_controls(const XINPUT_STATE *const starting_state,
+								 const ControlScheme control_scheme)
+	{
+		switch(control_scheme) {
+		case ControlScheme::Mode1:
+			return {
+				.pitch = starting_state->Gamepad.sThumbLY,
+				.pitch_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+				.yaw = starting_state->Gamepad.sThumbLX,
+				.yaw_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+				.roll = starting_state->Gamepad.sThumbRX,
+				.roll_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+				.throttle = starting_state->Gamepad.sThumbRY,
+				.throttle_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+			};
+		case ControlScheme::Mode2:
+			return {
+				.pitch = starting_state->Gamepad.sThumbRY,
+				.pitch_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+				.yaw = starting_state->Gamepad.sThumbLX,
+				.yaw_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+				.roll = starting_state->Gamepad.sThumbRX,
+				.roll_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+				.throttle = starting_state->Gamepad.sThumbLY,
+				.throttle_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+			};
+
+		case ControlScheme::Mode4:
+			return {
+				.pitch = starting_state->Gamepad.sThumbRY,
+				.pitch_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+				.yaw = starting_state->Gamepad.sThumbRX,
+				.yaw_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+				.roll = starting_state->Gamepad.sThumbLX,
+				.roll_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+				.throttle = starting_state->Gamepad.sThumbLY,
+				.throttle_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+			};
+
+		case ControlScheme::Mode3:
+			[[fallthrough]];
+		default:
+			return {
+				.pitch = starting_state->Gamepad.sThumbLY,
+				.pitch_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+				.yaw = starting_state->Gamepad.sThumbRX,
+				.yaw_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+				.roll = starting_state->Gamepad.sThumbLX,
+				.roll_deadzone = XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+				.throttle = starting_state->Gamepad.sThumbRY,
+				.throttle_deadzone = XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE,
+			};
+		}
+	}
+
   private:
 	HWND m_wnd{};
 	bool m_initialized{false};
@@ -602,7 +696,7 @@ class AceCombatPlugin : public uevr::Plugin
 	UEVR_Vector3f m_last_root_location{0};
 	UEVR_Rotatorf m_last_root_rotation{0};
 
-	static inline bool m_alternate_control_scheme = false;
+	static inline ControlScheme m_control_scheme = ControlScheme::DefaultControls;
 	bool last_is_is_drawing_ui = false;
 };
 
