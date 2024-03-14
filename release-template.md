@@ -1,15 +1,27 @@
 # Ace Combat 7 UEVR compatibility mod
 
 ## Mod Features
-1. fixes cockpit camera so it works out of the box in most situations
-1. adds 'unstuck cockpit instruments' button (left start/select button on Xbox controller) for those rare occurrences where automation fails.
-1. adds optional controls remap selectable in plugin overlay in UEVR menu. After remap controls are in line with typical flight sim - LS is elevator and rudder, RS is aileron and throttle.
-1. works well **only with VR plane skins added by Konan's VR Planes mod** (see below).
+1. **Fixes cockpit camera** so it works out of the box in most situations
+1. Adds **'unstuck cockpit instruments' button** (left start/select button on Xbox controller) for those rare occurrences where automation fails. 
+
+	**Button 3** on the image below: 
+	![](https://compass-ssl.xboxlive.com/assets/4a/5a/4a5a376a-50b3-444c-813d-248d4f82b51c.png?n=SXC-Article-MerlinControllerBackTopCallouts-L-16x9794x445-01.png)
+1. Adds **optional controls remap** selectable in plugin overlay in UEVR menu. For remap any standard RC control mode can be selected: ![RC control modes](https://i.stack.imgur.com/3O98c.png)
+1. works **only with VR plane skins added by Konan's VR Planes mod** (see below). **You need to beat campaign at least once** on any difficulty for skin slots to unlock. Otherwise there's no way to select VR version of a plane. 
+
+	I've tried quite a few ways to set 'campaign complete' flag in game but no luck. If you know a way let the Discord community know.
 
 ## Note
-This is an alternative for [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) (`~~~UEVR_Compatibility_Mod_P.pak`). **Do NOT install both** at the same time. The game will be very broken if you do.
+* This is an alternative for [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) (`~~~UEVR_Compatibility_Mod_P.pak`). **Do NOT install both** at the same time. The game will be very broken if you do.
+* **This is early version of the mod**. Please give me a hand in testing - you see broken camera somewhere with the mod? Leave a note in Ace Combat 7 Flat2VR discord channel (instructions below).
 
-**This is early version of the mod**. Please give me a hand in testing - you see broken camera somewhere with the mod? Leave a note in Ace Combat 7 Flat2VR discord channel (instructions below).
+## Status/known issues
+* Currently **whole game has been tested** using this mod. Status:
+	* Mission 13 has broken MFDs. Even if that will be fixed special weapon scope is not rendered in VR. Skip or play in flat screen.
+	* Mission 19 has broken long range radar. Still playable.
+	* in takeoff sequences where plane is stationary throttle up as soon as you can and let the plane move to fix the camera. This is a tradeoff for camera working well in so many other places.
+	* if you retry checkpoint you have to push 'unstuck cockpit instruments' button after you have control over the plane. So far this worked perfectly for me unlike with OG mod.
+	* otherwise it just works. If [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) just worked 95% of the time, this works 99% with 1% being stated above.
 
 ## Getting started
 
@@ -30,11 +42,11 @@ Flat2VR channel list is tiered. You need to tell the server that you want to see
 1. [this is how your ~mods folder should look like](https://cdn.discordapp.com/attachments/1071072263820021840/1216517542667878440/image.png?ex=6600ad3f&is=65ee383f&hm=e09af0ea62b131f90924a7b526ff11ffd12d2782bac72f808f599de842bbaf77&). If in doubt use [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835) install instructions over the picture.
 
 ### UEVR Nightly `067279517877c0b3dd8a1bb46a7124c1e1aac113` or newer is required
-* Vanilla version [here](https://github.com/praydog/UEVR-nightly/releases/tag/nightly-829-067279517877c0b3dd8a1bb46a7124c1e1aac113)
-* if you have anything **but Pico 4** clouds will look broken. You'll need mrbelowski's patch on top of latest UEVR nightly. At the time of writing `UEVR.zip` from [my discord message](https://discord.com/channels/747967102895390741/1071072263820021840/1216517229051383838) is the only source I know.
+* On **Quest 2/3/Pro** or any other headset with canted displays clouds will look broken. **You'll need a special UEVR version** with mrbelowski's patch on top of latest UEVR nightly. At the time of writing `UEVR.zip` from [my discord message](https://discord.com/channels/747967102895390741/1071072263820021840/1216995248350433310) is the only source I know.
+* Vanilla UEVR Nightly version [here](https://github.com/praydog/UEVR-nightly/releases/tag/nightly-829-067279517877c0b3dd8a1bb46a7124c1e1aac113). **This will have broken clouds unless you use Pico 4**
 
 ### Installing the mod
-1. download `Ace7Game.zip` from [here](https://github.com/keton/ace-combat-uevr/releases/latest)
+1. download `Ace7Game.zip` from [here](https://github.com/keton/ace-combat-uevr/releases/latest/download/Ace7Game.zip)
 1. import it as profile into UEVR using dedicated button in UEVR injector or unpack to `%APPDATA%\UnrealVRMod\Ace7Game` (you'll need to create `Ace7Game` or empty it before unpacking)
 
 ### Running
@@ -44,7 +56,7 @@ Flat2VR channel list is tiered. You need to tell the server that you want to see
 1. inject using UEVR nightly from above (optionally with mrbelowski's patch)
 1. (for first time verification only) press and hold L3+R3 till UEVR overlay pops up. It's set to long press so flares work in game. Look for blue overlay panel labelled `Ace Combat Plugin`. If you see it plugin is loaded. If not something went wrong.
 1. go into a mission, pick a plane
-1. **important** in plane customization screen go into skin selection menu and go to the very bottom. It should have 10 extra skin slots and you want the last one. If you don't see those Additional Skin Slots mod is not installed correctly. Go trough the steps again or ask on Discord.
+1. **important** in plane customization screen go into skin selection menu and go to the very bottom. It should have 10 extra skin slots and you want the last one. For that you have to have **completed campaign at least once** on any difficulty. Without that 'select skin' option won't show in game. If you don't see 10 extra skin slots under standard skins in menu Additional Skin Slots mod is not installed correctly. Go trough the steps again or ask on Discord.
 1. **you really need to select 10th additional skin slot**. This is what triggers Konan's VR Planes mod. Without it displays in the cockpit and HUD won't work. Not all planes are already converted. Check documentation.
 1. start mission as usual. Multi Function Displays (MFDs) should work. In case they get stuck press 'Unstuck cockpit button' - Xbox controller 'back' button (left small round one opposite to menu button)
 1. Camera breaks in some missions/planes? 'Unstuck cockpit button' fails to work? Please help by reporting on Discord.
