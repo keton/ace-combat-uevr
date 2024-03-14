@@ -16,12 +16,14 @@
 * **This is early version of the mod**. Please give me a hand in testing - you see broken camera somewhere with the mod? Leave a note in Ace Combat 7 Flat2VR discord channel (instructions below).
 
 ## Status/known issues
-* Currently **whole game has been tested** using this mod. Status:
-	* Mission 13 has broken MFDs. Even if that will be fixed special weapon scope is not rendered in VR. Skip or play in flat screen.
-	* Mission 19 has broken long range radar. Still playable.
-	* in takeoff sequences where plane is stationary throttle up as soon as you can and let the plane move to fix the camera. This is a tradeoff for camera working well in so many other places.
-	* if you retry checkpoint you have to push 'unstuck cockpit instruments' button after you have control over the plane. So far this worked perfectly for me unlike with OG mod.
-	* otherwise it just works. If [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) just worked 95% of the time, this works 99% with 1% being stated above.
+**The whole game has been tested** and can be beaten using this mod. 
+
+Quirks:
+* in mission 13 pick F2A, F16 and F18 that work reliably. F15C, F22 and A10 have broken MFDs. Special weapon sight does not render in VR. Play flat or try to get a feel for it.
+* in mission 19 avoid F15C and F22. Pick F2A, F16, F18 or F35 that just work.
+* in takeoff sequences where plane is stationary throttle up as soon as you can and let the plane move to fix the camera. This is a tradeoff for camera working well in so many other places.
+* if you retry checkpoint you have to push 'unstuck cockpit instruments' button after you have control over the plane. So far this worked perfectly for me unlike with OG mod.
+* otherwise it just works. If [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) just worked 95% of the time, this works 99% with 1% being stated above.
 
 ## Getting started
 
