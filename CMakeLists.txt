@@ -54,12 +54,12 @@ include(FetchContent)
 if(POLICY CMP0135)
 	cmake_policy(SET CMP0135 NEW)
 endif()
-message(STATUS "Fetching uevr (067279517877c0b3dd8a1bb46a7124c1e1aac113)...")
+message(STATUS "Fetching uevr (8b2fc9f2a8c50b01c0b48a98d94f03df434f0caf)...")
 FetchContent_Declare(uevr SYSTEM
 	GIT_REPOSITORY
 		"https://github.com/praydog/UEVR"
 	GIT_TAG
-		067279517877c0b3dd8a1bb46a7124c1e1aac113
+		8b2fc9f2a8c50b01c0b48a98d94f03df434f0caf
 )
 FetchContent_MakeAvailable(uevr)
 
