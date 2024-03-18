@@ -19,6 +19,7 @@
 
 #include "acesdk/AcePlayerPawn.hpp"
 #include "acesdk/Mission.hpp"
+#include "acesdk/NimbusCheatManager.hpp"
 #include "acesdk/NimbusPlayerCameraManager.hpp"
 #include "acesdk/NimbusPlayerController.hpp"
 
@@ -368,6 +369,37 @@ class AceCombatPlugin : public uevr::Plugin
 						m_last_root_rotation.roll);
 			ImGui::Text("m_last_root_location: X: %f, Y: %f, Z: %f", m_last_root_location.x,
 						m_last_root_location.y, m_last_root_location.z);
+
+			ImGui::Checkbox("Automatically complete mission once it starts",
+							&m_mission_autocomplete_cheat_enabled);
+
+			if(m_should_show_cheat_ui) {
+				const auto mission = Mission::get_instance();
+				const auto cheat_manager = NimbusCheatManager::get_instance();
+
+				if(mission) {
+					ImGui::Text("Mission: %ls", mission->get_full_name().c_str());
+					if(ImGui::Button("Complete mission")) {
+						mission->complete();
+					}
+
+					if(ImGui::Button("Pause mission timer")) {
+						mission->force_pause_mission_timer(true);
+					}
+
+					if(ImGui::Button("Unpause mission timer")) {
+						mission->force_pause_mission_timer(false);
+					}
+				}
+
+				if(cheat_manager) {
+					ImGui::Text("CheatManager: %ls", cheat_manager->get_full_name().c_str());
+
+					if(ImGui::Button("Toggle God mode")) {
+						cheat_manager->god();
+					}
+				}
+			}
 		}
 		ImGui::End();
 	}
@@ -391,28 +423,14 @@ class AceCombatPlugin : public uevr::Plugin
 				m_last_is_in_igc = false;
 				m_last_camera_type = CameraType::NO_CAMERA;
 
+				m_mission_autocomplete_cheat_applied = false;
+
 				stop_camera_setup();
 
 			} else {
 				API::get()->log_info("pawn class NULL");
 
 				m_last_player_pawn = nullptr;
-			}
-
-			const auto camera_manager_class = NimbusPlayerCameraManager::static_class(true);
-			if(camera_manager_class) {
-				API::get()->log_info("New camera_manager_class: %ls",
-									 camera_manager_class->get_full_name().c_str());
-			} else {
-				API::get()->log_info("camera_manager_class NULL");
-			}
-
-			const auto mission_class = NimbusPlayerCameraManager::get_instance(true);
-			if(mission_class) {
-				API::get()->log_info("New mission_class: %ls",
-									 mission_class->get_full_name().c_str());
-			} else {
-				API::get()->log_info("mission_class NULL");
 			}
 		}
 	}
@@ -434,6 +452,22 @@ class AceCombatPlugin : public uevr::Plugin
 
 		m_last_camera_setup_step = std::chrono::high_resolution_clock::now();
 		m_camera_setup_start_location = m_last_root_location;
+	}
+
+	void do_mission_autocomplete_cheat()
+	{
+		if(m_mission_autocomplete_cheat_enabled && !m_mission_autocomplete_cheat_applied) {
+			const auto mission_inst = Mission::get_instance();
+			const auto cheat_manager = NimbusCheatManager::get_instance();
+
+			if(!mission_inst || !cheat_manager) {
+				return;
+			}
+
+			m_mission_autocomplete_cheat_applied = true;
+			mission_inst->complete_cooldown_override(0.5, 1.0);
+			cheat_manager->god();
+		}
 	}
 
 	void do_camera_setup_step(NimbusPlayerCameraManager *const camera_manager)
@@ -485,6 +519,8 @@ class AceCombatPlugin : public uevr::Plugin
 				camera_manager->test_loop_camera_shake_add_scale(-5000.0);
 				m_last_camera_setup_step = {};
 				m_last_camera_setup_state = CameraSetupState::None;
+
+				do_mission_autocomplete_cheat();
 			}
 			break;
 
@@ -576,7 +612,7 @@ class AceCombatPlugin : public uevr::Plugin
 	{
 		const bool is_drawing_ui = API::get()->param()->functions->is_drawing_ui();
 
-		if(is_drawing_ui == last_is_is_drawing_ui) {
+		if(is_drawing_ui == m_last_is_is_drawing_ui) {
 			return;
 		}
 
@@ -587,11 +623,13 @@ class AceCombatPlugin : public uevr::Plugin
 			ImGui::MarkIniSettingsDirty();
 		}
 
-		last_is_is_drawing_ui = is_drawing_ui;
+		m_last_is_is_drawing_ui = is_drawing_ui;
 	}
 
 	void plugin_on_pre_engine_tick(API::UGameEngine *engine, float delta)
 	{
+		m_should_show_cheat_ui = false;
+
 		// trigger regardless if player_pawn (the plane) exists
 		process_ui_enter_exit();
 
@@ -608,6 +646,9 @@ class AceCombatPlugin : public uevr::Plugin
 		process_level_load(player_controller, player_pawn);
 		process_root_component_data(player_controller, player_pawn);
 		process_camera_switch(player_controller, player_pawn);
+
+		// only show cheat options in ImGui when player plane exists
+		m_should_show_cheat_ui = true;
 	}
 
 	inline int32_t linear_scale(const int32_t val, const int32_t val_max, const int32_t target_max,
@@ -618,7 +659,7 @@ class AceCombatPlugin : public uevr::Plugin
 	}
 
 	inline ControlInputs remap_controls(const XINPUT_STATE *const starting_state,
-								 const ControlScheme control_scheme)
+										const ControlScheme control_scheme)
 	{
 		switch(control_scheme) {
 		case ControlScheme::Mode1:
@@ -697,7 +738,12 @@ class AceCombatPlugin : public uevr::Plugin
 	UEVR_Rotatorf m_last_root_rotation{0};
 
 	static inline ControlScheme m_control_scheme = ControlScheme::DefaultControls;
-	bool last_is_is_drawing_ui = false;
+
+	bool m_last_is_is_drawing_ui = false;
+
+	bool m_should_show_cheat_ui = false;
+	bool m_mission_autocomplete_cheat_enabled = false;
+	bool m_mission_autocomplete_cheat_applied = false;
 };
 
 // Actually creates the plugin. Very important that this global is created.
