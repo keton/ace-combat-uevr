@@ -9,10 +9,10 @@ class NimbusPlayerCameraManager : public API::UObject
   public:
 	using API::UObject::get_full_name;
 
-	static API::UClass *static_class(bool force_search = false)
+	static API::UClass *static_class()
 	{
 		static API::UClass *result = nullptr;
-		if(!result || force_search) {
+		if(!result) {
 			result = API::get()->find_uobject<API::UClass>(
 				L"BlueprintGeneratedClass "
 				L"/Game/Blueprint/GameModes/"
@@ -21,9 +21,9 @@ class NimbusPlayerCameraManager : public API::UObject
 		return result;
 	}
 
-	static NimbusPlayerCameraManager *get_instance(bool force_search = false)
+	static NimbusPlayerCameraManager *get_instance()
 	{
-		auto klass = static_class(force_search);
+		auto klass = NimbusPlayerCameraManager::static_class();
 		if(klass) {
 			return klass->get_first_object_matching<NimbusPlayerCameraManager>();
 		}
