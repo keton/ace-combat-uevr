@@ -7,20 +7,15 @@
 	**Button 3** on the image below: 
 	![](https://compass-ssl.xboxlive.com/assets/4a/5a/4a5a376a-50b3-444c-813d-248d4f82b51c.png?n=SXC-Article-MerlinControllerBackTopCallouts-L-16x9794x445-01.png)
 1. Adds **optional controls remap** selectable in plugin overlay in UEVR menu. For remap any standard RC control mode can be selected: ![RC control modes](https://i.stack.imgur.com/3O98c.png)
-1. works **only with VR plane skins added by Konan's VR Planes mod** (see below). **You need to beat campaign at least once** on any difficulty for skin slots to unlock. Otherwise there's no way to select VR version of a plane. 
-
-	I've tried quite a few ways to set 'campaign complete' flag in game but no luck. If you know a way let the Discord community know.
+1. works **only with VR plane skins added by Konan's VR Planes mod** (see below). **You need to beat campaign at least once** on any difficulty for skin slots to unlock. Otherwise there's no way to select VR version of a plane. There's a quick way to cheat trough all missions [here](https://discord.com/channels/747967102895390741/1071072263820021840/1219319580195819621)
 
 ## Note
 * This is an alternative for [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) (`~~~UEVR_Compatibility_Mod_P.pak`). **Do NOT install both** at the same time. The game will be very broken if you do.
-* **This is early version of the mod**. Please give me a hand in testing - you see broken camera somewhere with the mod? Leave a note in Ace Combat 7 Flat2VR discord channel (instructions below).
 
 ## Status/known issues
 **The whole game has been tested** and can be beaten using this mod. 
 
 Quirks:
-* in mission 13 pick F2A, F16 and F18 that work reliably. F15C, F22 and A10 have broken MFDs. Special weapon sight does not render in VR. Play flat or try to get a feel for it.
-* in mission 19 avoid F15C and F22. Pick F2A, F16, F18 or F35 that just work.
 * in takeoff sequences where plane is stationary throttle up as soon as you can and let the plane move to fix the camera. This is a tradeoff for camera working well in so many other places.
 * if you retry checkpoint you have to push 'unstuck cockpit instruments' button after you have control over the plane. So far this worked perfectly for me unlike with OG mod.
 * otherwise it just works. If [kosnag's UEVR compatibility mod](https://discord.com/channels/747967102895390741/1071072263820021840/1200018686317187092) just worked 95% of the time, this works 99% with 1% being stated above.
@@ -36,16 +31,14 @@ Flat2VR channel list is tiered. You need to tell the server that you want to see
 
 ### Installing prerequisite mods
 1. after joining the Flat2VR discord install [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). Follow the instructions in `message.txt` file closely. Konan's `AC7_VR_PatchP.pak` from the same link is required as well. **Do not install** kosnag's uevr compatibility mod (`~~~UEVR_Compatibility_Mod_P.pak`). This profile replaces it.
-1. just to check that you've read the instructions you need:
-	* `Playable_VR_Planes_for_test_only_P.pak` from [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). Rename to `~~~~~~~Playable VR Planes (for test only)_P.pak`
+1. in short you need:
+	* [My special version](https://discord.com/channels/747967102895390741/1071072263820021840/1218606543994486806) of `Playable_VR_Planes_for_test_only_P.pak` to fix some planes with quirks. Rename to `~~~~~~~Playable VR Planes (for test only)_P.pak`
 	* `AC7_VR_Patch_P.pak` from [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835). Rename to `~~~~~~~AC7 VR Patch_P.pak`
 	* `Additional_Skin_Slots_P.pak` from [Additional Skin Slots mod](https://www.nexusmods.com/acecombat7skiesunknown/mods/2179)
 	* `~~~~~~~~~!since_SDT_Add-On-ASS_P.pak` from `since_SDT_Add-On_P.pak` download option in [sincerity's essential files](https://www.nexusmods.com/acecombat7skiesunknown/mods/2274)
 1. [this is how your ~mods folder should look like](https://cdn.discordapp.com/attachments/1071072263820021840/1216517542667878440/image.png?ex=6600ad3f&is=65ee383f&hm=e09af0ea62b131f90924a7b526ff11ffd12d2782bac72f808f599de842bbaf77&). If in doubt use [Konan's VR Planes mod](https://discord.com/channels/747967102895390741/1071072263820021840/1216021454563446835) install instructions over the picture.
 
-### UEVR Nightly `067279517877c0b3dd8a1bb46a7124c1e1aac113` or newer is required
-* On **Quest 2/3/Pro** or any other headset with canted displays clouds will look broken. **You'll need a special UEVR version** with mrbelowski's patch on top of latest UEVR nightly. At the time of writing `UEVR.zip` from [my discord message](https://discord.com/channels/747967102895390741/1071072263820021840/1216995248350433310) is the only source I know.
-* Vanilla UEVR Nightly version [here](https://github.com/praydog/UEVR-nightly/releases/tag/nightly-829-067279517877c0b3dd8a1bb46a7124c1e1aac113). **This will have broken clouds unless you use Pico 4**
+### [UEVR Nightly](https://github.com/praydog/UEVR-nightly/releases/tag/nightly-846-3b206447ac202795afd99c0e5391cac28823920c) `3b206447ac202795afd99c0e5391cac28823920c` or newer is required
 
 ### Installing the mod
 1. download `Ace7Game.zip` from [here](https://github.com/keton/ace-combat-uevr/releases/latest/download/Ace7Game.zip)
